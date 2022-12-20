@@ -17,6 +17,7 @@ def get_response(url, dvmn_token, params=None):
 
 
 def send_telegram_notification(response, bot_token, chat_id):
+    print(chat_id)
     bot = telegram.Bot(token=bot_token)
     lesson_title = response["new_attempts"][0]["lesson_title"]
     lesson_url = response["new_attempts"][0]["lesson_url"]
@@ -58,8 +59,6 @@ if __name__ == "__main__":
     notification_bot = argparse.ArgumentParser(
         description="Бот для отправки уведомлений о проверке работ на dvmn.org"
     )
-    notification_bot.add_argument(
-        "--chat_id", default=os.getenv("CHAT_ID"), help="chat id Telegram бота"
-    )
+    notification_bot.add_argument("--chat_id", help="chat id Telegram бота")
     chat_id = notification_bot.parse_args().chat_id
     main(chat_id)
