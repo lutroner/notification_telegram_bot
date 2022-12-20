@@ -17,7 +17,6 @@ def get_response(url, dvmn_token, params=None):
 
 
 def send_telegram_notification(response, bot_token, chat_id):
-    print(chat_id)
     bot = telegram.Bot(token=bot_token)
     lesson_title = response["new_attempts"][0]["lesson_title"]
     lesson_url = response["new_attempts"][0]["lesson_url"]
