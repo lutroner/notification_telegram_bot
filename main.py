@@ -1,5 +1,6 @@
 import argparse
 import os
+from time import sleep
 
 import requests
 import telegram
@@ -34,30 +35,35 @@ def send_telegram_notification(response, bot_token, chat_id):
         )
 
 
-def main(chat_id):
+def main():
     load_dotenv()
     bot_token = os.environ.get("BOT_TOKEN")
     dvmn_token = os.environ.get("DEVMAN_TOKEN")
     last_timestamp = None
+    notification_bot = argparse.ArgumentParser(
+        description="Бот для отправки уведомлений о проверке работ на dvmn.org"
+    )
+    notification_bot.add_argument("--chat_id", help="chat id Telegram бота")
+    chat_id = notification_bot.parse_args().chat_id
+    loop_count = 0
     while True:
+        if loop_count >= 10:
+            sleep(loop_count * 0.5)
         params = {"timestamp": last_timestamp}
         try:
             response = get_response(DVMN_URL, dvmn_token, params)
         except requests.exceptions.ReadTimeout:
             continue
         except requests.exceptions.ConnectionError:
+            loop_count += 1
             continue
         if "timestamp_to_request" in response:
             last_timestamp = response["timestamp_to_request"]
         else:
             last_timestamp = response["last_attempt_timestamp"]
             send_telegram_notification(response, bot_token, chat_id)
+        loop_count = 0
 
 
 if __name__ == "__main__":
-    notification_bot = argparse.ArgumentParser(
-        description="Бот для отправки уведомлений о проверке работ на dvmn.org"
-    )
-    notification_bot.add_argument("--chat_id", help="chat id Telegram бота")
-    chat_id = notification_bot.parse_args().chat_id
-    main(chat_id)
+    main()
