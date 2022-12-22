@@ -10,13 +10,6 @@ DVMN_URL = "https://dvmn.org/api/long_polling/"
 TIMEOUT = 92
 
 
-def get_response(url, dvmn_token, params=None):
-    headers = {"Authorization": f"Token {dvmn_token}"}
-    response = requests.get(url, headers=headers, timeout=TIMEOUT, params=params)
-    response.raise_for_status()
-    return response.json()
-
-
 def send_telegram_notification(response, bot_token, chat_id):
     bot = telegram.Bot(token=bot_token)
     lesson_title = response["new_attempts"][0]["lesson_title"]
@@ -39,6 +32,7 @@ def main():
     load_dotenv()
     bot_token = os.environ.get("BOT_TOKEN")
     dvmn_token = os.environ.get("DEVMAN_TOKEN")
+    headers = {"Authorization": f"Token {dvmn_token}"}
     last_timestamp = None
     notification_bot = argparse.ArgumentParser(
         description="Бот для отправки уведомлений о проверке работ на dvmn.org"
@@ -51,13 +45,15 @@ def main():
             sleep(loop_count * 0.5)
         params = {"timestamp": last_timestamp}
         try:
-            response = get_response(DVMN_URL, dvmn_token, params)
+            response = requests.get(url=DVMN_URL, headers=headers, params=params)
+            response.raise_for_status()
+            response = response.json()
         except requests.exceptions.ReadTimeout:
             continue
         except requests.exceptions.ConnectionError:
             loop_count += 1
             continue
-        if "timestamp_to_request" in response:
+        if response["status"] == "timeout":
             last_timestamp = response["timestamp_to_request"]
         else:
             last_timestamp = response["last_attempt_timestamp"]
